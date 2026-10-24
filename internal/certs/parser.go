@@ -1,7 +1,6 @@
 package certs
 
 import (
-	"crypto/dsa"
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rsa"
@@ -116,17 +115,18 @@ func analyzeSingleCertificate(cert *x509.Certificate, filePath string, now time.
 		analysis.RiskReasons = append(analysis.RiskReasons, "Ed25519 is vulnerable to Shor's algorithm for elliptic curve discrete logarithms")
 		analysis.Recommendation = "Plan transition to stateful hash-based or lattice-based PQC signatures"
 
-	case *dsa.PublicKey:
-		analysis.KeyType = "DSA"
-		analysis.KeySizeBits = pub.Parameters.P.BitLen()
-		analysis.Classification = rules.RiskLegacyBroken
-		analysis.RiskReasons = append(analysis.RiskReasons, "Digital Signature Algorithm (DSA) is deprecated and legacy broken")
-		analysis.Recommendation = "Replace DSA with modern quantum-safer or post-quantum signature schemes immediately"
-
 	default:
-		analysis.KeyType = "Unknown"
-		analysis.Classification = rules.RiskUnknown
-		analysis.RiskReasons = append(analysis.RiskReasons, "Unrecognized public key algorithm")
+		keyTypeStr := fmt.Sprintf("%T", cert.PublicKey)
+		if strings.Contains(keyTypeStr, "dsa.PublicKey") {
+			analysis.KeyType = "DSA"
+			analysis.Classification = rules.RiskLegacyBroken
+			analysis.RiskReasons = append(analysis.RiskReasons, "Digital Signature Algorithm (DSA) is deprecated and legacy broken")
+			analysis.Recommendation = "Replace DSA with modern quantum-safer or post-quantum signature schemes immediately"
+		} else {
+			analysis.KeyType = "Unknown"
+			analysis.Classification = rules.RiskUnknown
+			analysis.RiskReasons = append(analysis.RiskReasons, "Unrecognized public key algorithm")
+		}
 	}
 
 	// Check signature algorithm for legacy hash degradation
