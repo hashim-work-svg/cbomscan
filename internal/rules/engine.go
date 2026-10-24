@@ -78,6 +78,10 @@ func (e *Engine) ScanContent(filePath string, content []byte) []Finding {
 	}
 
 	scanner := bufio.NewScanner(bytes.NewReader(content))
+	buf := make([]byte, 64*1024)
+	scanner.Buffer(buf, 2*1024*1024) // Allow lines up to 2MB
+
+	seen := make(map[string]bool)
 	lineNum := 0
 	for scanner.Scan() {
 		lineNum++
@@ -90,6 +94,12 @@ func (e *Engine) ScanContent(filePath string, content []byte) []Finding {
 		for _, r := range applicableRules {
 			if loc := r.CompiledRegex.FindStringIndex(line); loc != nil {
 				matched := line[loc[0]:loc[1]]
+				dedupeKey := fmt.Sprintf("%s:%d:%s", r.ID, lineNum, matched)
+				if seen[dedupeKey] {
+					continue
+				}
+				seen[dedupeKey] = true
+
 				findings = append(findings, Finding{
 					RuleID:         r.ID,
 					Algorithm:      r.Algorithm,
@@ -104,12 +114,25 @@ func (e *Engine) ScanContent(filePath string, content []byte) []Finding {
 			}
 		}
 	}
+	if err := scanner.Err(); err != nil {
+		// Log or retain error note without terminating partial findings
+		fmt.Fprintf(os.Stderr, "Warning: scan encountered error reading %s: %v\n", filePath, err)
+	}
 
 	return findings
 }
 
-// ScanFile reads a file from disk and scans its content.
+// ScanFile reads a file from disk with a safety size limit and scans its content.
 func (e *Engine) ScanFile(filePath string) ([]Finding, error) {
+	info, err := os.Stat(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to stat file %q: %w", filePath, err)
+	}
+	// File size guard: prevent reading unbounded binary/log files into memory (10MB limit)
+	if info.Size() > 10*1024*1024 {
+		return nil, fmt.Errorf("file %q exceeds maximum scan size limit of 10MB (%d bytes)", filePath, info.Size())
+	}
+
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %q: %w", filePath, err)

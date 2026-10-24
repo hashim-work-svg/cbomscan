@@ -8,79 +8,80 @@
 
 ---
 
-## 1. Problem & Industry Evidence
+## 1. Problem & Context
 
-The cryptographic transition to Post-Quantum Cryptography (PQC) is no longer theoretical—it is an imminent regulatory and engineering mandate:
+The cryptographic transition to Post-Quantum Cryptography (PQC) is an imminent regulatory and engineering imperative:
 
-* **NIST Deprecation Timelines:** NIST has designated **2030** as the deprecation date and **2035** as the full disallowance date for RSA, DSA, and Elliptic-Curve public-key cryptography (ECC/ECDSA/ECDH).
-* **The Transition Gap:** 2026 global cybersecurity benchmarks indicate that **only ~38% of organizations are actively transitioning to post-quantum cryptography**, while **~68% report that discovering and managing cryptographic assets across codebases is very difficult**.
-* **Regulatory Mandates:** US federal directives and EU guidance mandate that organizations establish a comprehensive **Cryptographic Bill of Materials (CBOM)** to audit algorithmic exposure to quantum decryption (Shor's algorithm) and *Store-Now-Decrypt-Later* (SNDL) attacks.
+* **NIST Transition Roadmap (NIST IR 8547):** NIST has slated **2030** for deprecation and **2035** for full disallowance of classical asymmetric cryptography (RSA, DSA, ECDSA, ECDH) vulnerable to Shor's algorithm on Cryptanalytically Relevant Quantum Computers (CRQCs).
+* **The Discovery Gap:** Industry reports highlight that finding and cataloging cryptographic assets embedded in legacy microservices, dependency trees, and server configurations is the most arduous first step in PQC migration.
+* **Cryptographic Inventories:** Directives such as US OMB Memorandum M-23-02 and European PQC migration guidelines mandate that organizations establish a comprehensive cryptographic inventory or **Cryptographic Bill of Materials (CBOM)** to assess Store-Now-Decrypt-Later (SNDL) exposures.
 
-**`cbomscan`** solves this by providing automated discovery of cryptographic primitives across source code repositories, server configuration files, and X.509 certificates, classifying risks, scoring migration priorities, and outputting standard CycloneDX CBOM files.
-
----
-
-## 2. Key Capabilities
-
-* 🔍 **Multi-Target Cryptographic Discovery:** Scans source code repositories (Go, Python, Java, JavaScript/TypeScript), server configurations (nginx, sshd, OpenSSL), and X.509 certificates (PEM and DER).
-* 📜 **Native X.509 Certificate Analysis:** Inspects asymmetric key types (RSA, ECDSA, Ed25519), key lengths, elliptic curves (P-256, P-384, P-521), signature algorithms, and expiration dates without external OpenSSL dependencies.
-* 🏷️ **Post-Quantum Risk Classification:**
-  * 🔴 `quantum-vulnerable`: RSA, ECC, ECDH, ECDSA (vulnerable to Shor's algorithm).
-  * ⚠️ `legacy-broken`: MD5, SHA-1, DES, 3DES, RC4, RSA < 2048 bits.
-  * 🟢 `quantum-safer-candidate`: AES-256, SHA-256+, ML-KEM, ML-DSA.
-* 📊 **Standardized Migration Priority Score (0–100):** Ranks findings based on algorithmic severity, sensitive path context (`auth`, `payment`, `pki`), and certificate expiration urgency.
-* ⚡ **Single Static Binary (`CGO_ENABLED=0`):** Shipped as one self-contained executable with all rules embedded via `go:embed`. Runs on Linux, macOS, and Windows.
+**`cbomscan`** automates this discovery across source code repositories (Go, Python, Java, JavaScript/TypeScript), server configuration files (nginx, sshd, OpenSSL), and X.509 certificates (PEM and DER), classifying risks, scoring migration priorities (0–100), and exporting standard CycloneDX 1.6 CBOM files.
 
 ---
 
-## 3. Architecture Overview
+## 2. Implementation Status
 
+| Capability | Status | Description |
+| :--- | :---: | :--- |
+| **Multi-Language Scanning (Go, Python, Java, JS)** | ✅ Shipped | Embedded YAML rules with line-by-line inspection |
+| **Server Config Auditing (nginx, sshd, OpenSSL)** | ✅ Shipped | Audits TLS protocols, legacy SSH ciphers, and KEX |
+| **Native X.509 PEM & DER Certificate Parser** | ✅ Shipped | Key sizes, curves, validity, expiration urgency |
+| **CycloneDX 1.6 CBOM JSON Exporter** | ✅ Shipped | Standard `cryptographic-asset` component schema |
+| **Migration Priority Scoring Engine (0–100)** | ✅ Shipped | Formula-based ranking (`docs/scoring.md`) |
+| **Executive Markdown & CSV Reports** | ✅ Shipped | `--format md` and `--format csv` outputs |
+| **Zero-Install Demo Mode** | ✅ Shipped | `cbomscan demo` runs on embedded synthetic project |
+| **CI Failure Gating** | ✅ Shipped | `--fail-on critical` exits non-zero for CI pipelines |
+
+---
+
+## 3. Installation
+
+Download pre-compiled static binaries from [GitHub Releases](https://github.com/hashim-work-svg/cbomscan/releases), or install via Go:
+
+```bash
+go install github.com/hashim-work-svg/cbomscan/cmd/cbomscan@latest
 ```
-[Source Code / Configs / X.509 Certificates]
-                    │
-                    ▼
-          ┌───────────────────┐
-          │   Target Router   │
-          └─────────┬─────────┘
-                    │
-       ┌────────────┴────────────┐
-       ▼                         ▼
-┌──────────────┐          ┌──────────────┐
-│  Regex Rule  │          │    X.509     │
-│    Engine    │          │  ASN.1/DER   │
-└──────┬───────┘          └──────┬───────┘
-       │                         │
-       └────────────┬────────────┘
-                    ▼
-          ┌───────────────────┐
-          │  Risk Classifier  │ ──► quantum-vulnerable / legacy-broken
-          └─────────┬─────────┘
-                    ▼
-          ┌───────────────────┐
-          │  Priority Scorer  │ ──► 0-100 Migration Priority Formula
-          └─────────┬─────────┘
-                    ▼
-          ┌───────────────────┐
-          │ Export & Display  │ ──► CLI Tables / CycloneDX CBOM JSON
-          └───────────────────┘
+
+Or build from source:
+
+```bash
+git clone https://github.com/hashim-work-svg/cbomscan.git
+cd cbomscan
+make build-static
 ```
 
 ---
 
 ## 4. Quickstart
 
-### Scan a Local Directory or Repository:
+### Zero-Install Demo:
+Run a complete demonstration against an embedded synthetic microservice:
 ```bash
-# Scan current directory for cryptographic usage and certificates
-./cbomscan scan .
-
-# Scan specific directory
-./cbomscan scan /path/to/project
+cbomscan demo
 ```
 
-### Scan a Certificate File:
+### Scan a Repository or Directory:
 ```bash
-./cbomscan scan /etc/ssl/certs/server.crt
+# Scan current directory for cryptographic usage and certificates
+cbomscan scan .
+
+# Scan specific path and export CycloneDX 1.6 CBOM JSON
+cbomscan scan ./src --format cbom -o cbom.json
+
+# Generate executive Markdown summary
+cbomscan scan ./src --format md -o report.md
+
+# Generate CSV export
+cbomscan scan ./src --format csv -o findings.csv
+
+# CI/CD Gate: Fail build if any Critical findings exist
+cbomscan scan . --fail-on critical
+```
+
+### Scan an X.509 Certificate:
+```bash
+cbomscan scan /etc/ssl/certs/server.crt
 ```
 
 ---

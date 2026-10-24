@@ -86,3 +86,47 @@ rules:
     algorithm: "SHA-256"
     severity: "info"
     recommendation: "SHA-256 provides solid post-quantum collision resistance"
+
+  - id: "go-ecdh-usage"
+    name: "Go ECDH Key Agreement"
+    description: "Detects usage of crypto/ecdh (quantum-vulnerable elliptic curve key exchange)"
+    languages: ["go"]
+    file_globs: ["*.go"]
+    pattern: '("crypto/ecdh"|ecdh\.P256|ecdh\.P384|ecdh\.P521|ecdh\.X25519)'
+    classification: "quantum-vulnerable"
+    algorithm: "ECDH"
+    severity: "high"
+    recommendation: "Plan migration to post-quantum KEM (ML-KEM / FIPS 203)"
+
+  - id: "go-ed25519-usage"
+    name: "Go Ed25519 Signatures"
+    description: "Detects usage of crypto/ed25519 (quantum-vulnerable Edwards-curve signature)"
+    languages: ["go"]
+    file_globs: ["*.go"]
+    pattern: '("crypto/ed25519"|ed25519\.GenerateKey|ed25519\.Sign|ed25519\.Verify)'
+    classification: "quantum-vulnerable"
+    algorithm: "Ed25519"
+    severity: "high"
+    recommendation: "Plan migration to NIST post-quantum digital signature standards (ML-DSA / FIPS 204)"
+
+  - id: "go-mlkem-safer"
+    name: "Go ML-KEM Post-Quantum Key Encapsulation"
+    description: "Detects NIST FIPS 203 ML-KEM (Kyber) quantum-safe KEM usage"
+    languages: ["go"]
+    file_globs: ["*.go"]
+    pattern: '("crypto/mlkem"|mlkem\.NewDecapsulationKey768|mlkem\.NewDecapsulationKey1024|mlkem\.GenerateKey)'
+    classification: "quantum-safer-candidate"
+    algorithm: "ML-KEM"
+    severity: "info"
+    recommendation: "ML-KEM is NIST FIPS 203 standard for quantum-safe key encapsulation"
+
+  - id: "go-mldsa-safer"
+    name: "Go ML-DSA Post-Quantum Digital Signature"
+    description: "Detects NIST FIPS 204 ML-DSA (Dilithium) quantum-safe signature usage"
+    languages: ["go"]
+    file_globs: ["*.go"]
+    pattern: '("crypto/mldsa"|mldsa\.GenerateKey|mldsa\.Sign|mldsa\.Verify)'
+    classification: "quantum-safer-candidate"
+    algorithm: "ML-DSA"
+    severity: "info"
+    recommendation: "ML-DSA is NIST FIPS 204 standard for quantum-safe digital signatures"

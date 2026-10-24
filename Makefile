@@ -1,8 +1,8 @@
 BINARY_NAME=cbomscan
 BIN_DIR=bin
 VERSION?=v0.1.0-dev
-COMMIT?=$(shell git rev-parse --short HEAD 2>nul || echo "none")
-DATE?=$(shell date /t 2>nul || echo "unknown")
+COMMIT?=$(shell git rev-parse --short HEAD 2>/dev/null || echo "none")
+DATE?=$(shell date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "unknown")
 LDFLAGS=-s -w -X main.Version=$(VERSION) -X main.Commit=$(COMMIT) -X main.Date=$(DATE)
 
 .PHONY: all build build-static test test-coverage lint clean demo
@@ -27,7 +27,7 @@ lint:
 	golangci-lint run ./...
 
 demo: build
-	./$(BIN_DIR)/$(BINARY_NAME) scan .
+	./$(BIN_DIR)/$(BINARY_NAME) demo
 
 clean:
 	rm -rf $(BIN_DIR) coverage.out dist

@@ -1,0 +1,77 @@
+rules:
+  - id: "java-rsa-usage"
+    name: "Java RSA Cryptography Usage"
+    description: "Detects RSA cipher or key pair generation in Java"
+    languages: ["java"]
+    file_globs: ["*.java"]
+    pattern: '(?i)(Cipher\.getInstance\s*\(\s*["'']RSA|KeyPairGenerator\.getInstance\s*\(\s*["'']RSA)'
+    classification: "quantum-vulnerable"
+    algorithm: "RSA"
+    severity: "high"
+    recommendation: "Plan migration from RSA to ML-DSA or ML-KEM"
+
+  - id: "java-ec-usage"
+    name: "Java ECC / ECDSA Usage"
+    description: "Detects elliptic curve cipher or key pair generation in Java"
+    languages: ["java"]
+    file_globs: ["*.java"]
+    pattern: '(?i)(KeyPairGenerator\.getInstance\s*\(\s*["'']EC["'']|KeyAgreement\.getInstance\s*\(\s*["'']ECDH["''])'
+    classification: "quantum-vulnerable"
+    algorithm: "ECDSA"
+    severity: "high"
+    recommendation: "Plan migration to post-quantum signature standards (ML-DSA)"
+
+  - id: "java-md5-broken"
+    name: "Java MD5 Broken Hash"
+    description: "Detects usage of broken MD5 message digest in Java"
+    languages: ["java"]
+    file_globs: ["*.java"]
+    pattern: '(?i)MessageDigest\.getInstance\s*\(\s*["'']MD5["'']'
+    classification: "legacy-broken"
+    algorithm: "MD5"
+    severity: "critical"
+    recommendation: "Replace MD5 with SHA-256 or SHA-3"
+
+  - id: "java-sha1-broken"
+    name: "Java SHA-1 Broken Hash"
+    description: "Detects usage of broken SHA-1 message digest in Java"
+    languages: ["java"]
+    file_globs: ["*.java"]
+    pattern: '(?i)MessageDigest\.getInstance\s*\(\s*["'']SHA-?1["'']'
+    classification: "legacy-broken"
+    algorithm: "SHA-1"
+    severity: "high"
+    recommendation: "Upgrade SHA-1 to SHA-256 or SHA-512"
+
+  - id: "java-des-broken"
+    name: "Java DES/3DES Broken Cipher"
+    description: "Detects usage of deprecated DES or TripleDES ciphers in Java"
+    languages: ["java"]
+    file_globs: ["*.java"]
+    pattern: '(?i)Cipher\.getInstance\s*\(\s*["''](DES|DESede)'
+    classification: "legacy-broken"
+    algorithm: "DES/3DES"
+    severity: "critical"
+    recommendation: "Replace DES with AES/GCM/NoPadding"
+
+  - id: "java-rc4-broken"
+    name: "Java RC4 Broken Cipher"
+    description: "Detects usage of broken RC4 cipher in Java"
+    languages: ["java"]
+    file_globs: ["*.java"]
+    pattern: '(?i)Cipher\.getInstance\s*\(\s*["''](RC4|ARCFOUR)'
+    classification: "legacy-broken"
+    algorithm: "RC4"
+    severity: "critical"
+    recommendation: "Cease RC4 usage; migrate to AES-256-GCM"
+
+  - id: "java-aes-safer"
+    name: "Java AES Cipher"
+    description: "Detects AES cipher usage in Java"
+    languages: ["java"]
+    file_globs: ["*.java"]
+    pattern: '(?i)Cipher\.getInstance\s*\(\s*["'']AES'
+    classification: "quantum-safer-candidate"
+    algorithm: "AES"
+    severity: "info"
+    recommendation: "Use 256-bit AES keys with GCM mode (AES/GCM/NoPadding)"

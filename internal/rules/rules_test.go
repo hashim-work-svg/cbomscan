@@ -230,3 +230,57 @@ rules:
 		t.Errorf("expected 1 js finding, got %d", len(jsFindings))
 	}
 }
+
+// TestConfigRuleTLSFalsePositives validates that modern TLS configurations (TLSv1.2, TLSv1.3)
+// are NEVER flagged as critical legacy-broken, while actual legacy protocols (SSLv3, TLSv1.0, TLSv1.1) are.
+func TestConfigRuleTLSFalsePositives(t *testing.T) {
+	configYAML := []byte(`
+rules:
+  - id: "cfg-sslv3-broken"
+    name: "Weak Protocol SSLv3 / TLSv1.0 / TLSv1.1"
+    languages: ["configs"]
+    file_globs: ["*.conf", "nginx.conf"]
+    pattern: '(?i)(ssl_?protocols?\s+[^;]*\b(SSLv2|SSLv3|TLSv1(?:\.0)?|TLSv1\.1)([\s;,"'']|$)|Protocols\s+[^;]*\b(TLSv1(?:\.0)?|TLSv1\.1)([\s;,"'']|$))'
+    classification: "legacy-broken"
+    algorithm: "TLSv1.0/TLSv1.1"
+    severity: "critical"
+`)
+
+	engine := NewEngine()
+	if err := engine.LoadFromYAML(configYAML); err != nil {
+		t.Fatalf("failed to load rule: %v", err)
+	}
+
+	// 1. Negative test: Modern secure nginx configuration MUST produce 0 findings
+	modernConfigs := [][]byte{
+		[]byte("ssl_protocols TLSv1.2 TLSv1.3;\n"),
+		[]byte("ssl_protocols TLSv1.3;\n"),
+		[]byte("ssl_protocols TLSv1.2;\n"),
+		[]byte("Protocols TLSv1.3;\n"),
+	}
+
+	for _, cfg := range modernConfigs {
+		findings := engine.ScanContent("nginx.conf", cfg)
+		if len(findings) != 0 {
+			t.Errorf("FALSE POSITIVE: modern config %q produced %d findings (rule falsely matched TLSv1.2/TLSv1.3): %+v",
+				string(cfg), len(findings), findings)
+		}
+	}
+
+	// 2. Positive test: Legacy and broken configurations MUST be detected
+	brokenConfigs := [][]byte{
+		[]byte("ssl_protocols TLSv1.0 TLSv1.2;\n"),
+		[]byte("ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;\n"),
+		[]byte("ssl_protocols SSLv3;\n"),
+		[]byte("ssl_protocols SSLv2 SSLv3 TLSv1;\n"),
+		[]byte("Protocols TLSv1.0;\n"),
+		[]byte("Protocols TLSv1.1;\n"),
+	}
+
+	for _, cfg := range brokenConfigs {
+		findings := engine.ScanContent("nginx.conf", cfg)
+		if len(findings) == 0 {
+			t.Errorf("FALSE NEGATIVE: legacy broken config %q was not detected", string(cfg))
+		}
+	}
+}

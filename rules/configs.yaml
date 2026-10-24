@@ -3,8 +3,8 @@ rules:
     name: "Weak Protocol SSLv3 / TLSv1.0 / TLSv1.1"
     description: "Detects deprecated and broken SSL/TLS protocols in server configurations"
     languages: ["configs"]
-    file_globs: ["*.conf", "*.cfg", "sshd_config", "nginx.conf"]
-    pattern: '(?i)(ssl_protocols\s+.*\b(SSLv2|SSLv3|TLSv1|TLSv1\.1)\b|Protocols\s+.*\b(TLSv1|TLSv1\.1)\b)'
+    file_globs: ["*.conf", "*.cfg", "sshd_config", "nginx.conf", "*.cnf"]
+    pattern: '(?i)(ssl_?protocols?\s+[^;]*\b(SSLv2|SSLv3|TLSv1(?:\.0)?|TLSv1\.1)([\s;,"'']|$)|Protocols\s+[^;]*\b(TLSv1(?:\.0)?|TLSv1\.1)([\s;,"'']|$))'
     classification: "legacy-broken"
     algorithm: "TLSv1.0/TLSv1.1"
     severity: "critical"
@@ -14,9 +14,53 @@ rules:
     name: "Weak Legacy Cipher Suites in Config"
     description: "Detects RC4, 3DES, or NULL cipher suites in configuration files"
     languages: ["configs"]
-    file_globs: ["*.conf", "*.cfg", "sshd_config", "nginx.conf"]
-    pattern: '(?i)\b(RC4-SHA|DES-CBC3-SHA|EDH-RSA-DES-CBC3-SHA|NULL-SHA)\b'
+    file_globs: ["*.conf", "*.cfg", "sshd_config", "nginx.conf", "*.cnf"]
+    pattern: '(?i)\b(RC4-SHA|DES-CBC3-SHA|EDH-RSA-DES-CBC3-SHA|NULL-SHA|RC4-MD5)\b'
     classification: "legacy-broken"
     algorithm: "RC4/3DES"
     severity: "critical"
     recommendation: "Remove deprecated 3DES and RC4 ciphers from server cipher suites"
+
+  - id: "cfg-ssh-weak-ciphers"
+    name: "Weak SSH Ciphers"
+    description: "Detects legacy or broken symmetric ciphers in sshd configuration"
+    languages: ["configs"]
+    file_globs: ["sshd_config", "*.conf"]
+    pattern: '(?i)^\s*Ciphers\s+.*(3des-cbc|blowfish-cbc|cast128-cbc|arcfour|aes128-cbc)'
+    classification: "legacy-broken"
+    algorithm: "3DES/Blowfish/RC4"
+    severity: "high"
+    recommendation: "Restrict sshd Ciphers to chacha20-poly1305@openssh.com and aes256-gcm@openssh.com"
+
+  - id: "cfg-ssh-weak-kex"
+    name: "Weak SSH Key Exchange Algorithms"
+    description: "Detects legacy Diffie-Hellman groups vulnerable to quantum or discrete log attacks"
+    languages: ["configs"]
+    file_globs: ["sshd_config", "*.conf"]
+    pattern: '(?i)^\s*KexAlgorithms\s+.*(diffie-hellman-group1-sha1|diffie-hellman-group14-sha1|diffie-hellman-group-exchange-sha1)'
+    classification: "legacy-broken"
+    algorithm: "DH-SHA1"
+    severity: "high"
+    recommendation: "Migrate SSH KexAlgorithms to curve25519-sha256 or post-quantum hybrid sntrup761x25519-sha512@openssh.com"
+
+  - id: "cfg-ssh-weak-hostkey"
+    name: "Weak SSH HostKey Algorithms"
+    description: "Detects ssh-dss (DSA) or legacy ssh-rsa host key algorithms"
+    languages: ["configs"]
+    file_globs: ["sshd_config", "*.conf"]
+    pattern: '(?i)^\s*HostKeyAlgorithms\s+.*(ssh-dss|ssh-rsa)\b'
+    classification: "legacy-broken"
+    algorithm: "DSA/RSA-SHA1"
+    severity: "high"
+    recommendation: "Use ssh-ed25519 or ecdsa-sha2-nistp256 host keys, or post-quantum host keys"
+
+  - id: "cfg-openssl-seclevel"
+    name: "Insecure OpenSSL Security Level"
+    description: "Detects reduced OpenSSL security levels (SECLEVEL=0 or SECLEVEL=1)"
+    languages: ["configs"]
+    file_globs: ["*.cnf", "*.conf", "openssl.cnf"]
+    pattern: '(?i)DEFAULT@SECLEVEL=[01]\b'
+    classification: "legacy-broken"
+    algorithm: "OpenSSL-SECLEVEL-Low"
+    severity: "high"
+    recommendation: "Enforce SECLEVEL=2 or higher in OpenSSL configurations"

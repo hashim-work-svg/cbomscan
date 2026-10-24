@@ -1,0 +1,77 @@
+rules:
+  - id: "py-rsa-usage"
+    name: "Python RSA Cryptography Usage"
+    description: "Detects RSA key generation or encryption in Python"
+    languages: ["python"]
+    file_globs: ["*.py"]
+    pattern: '(?i)(rsa\.generate_private_key|from\s+cryptography\.hazmat\.primitives\.asymmetric\s+import\s+rsa|import\s+rsa\b|RSA\.generate)'
+    classification: "quantum-vulnerable"
+    algorithm: "RSA"
+    severity: "high"
+    recommendation: "Plan migration from RSA to ML-DSA or ML-KEM"
+
+  - id: "py-ecc-usage"
+    name: "Python ECC / ECDSA Usage"
+    description: "Detects elliptic curve cryptography usage in Python"
+    languages: ["python"]
+    file_globs: ["*.py"]
+    pattern: '(?i)(ec\.generate_private_key|from\s+cryptography\.hazmat\.primitives\.asymmetric\s+import\s+ec|SECP256R1|SECP384R1|SECP521R1)'
+    classification: "quantum-vulnerable"
+    algorithm: "ECDSA"
+    severity: "high"
+    recommendation: "Plan migration to post-quantum signatures (ML-DSA)"
+
+  - id: "py-md5-broken"
+    name: "Python MD5 Broken Hash"
+    description: "Detects usage of broken MD5 hash in Python"
+    languages: ["python"]
+    file_globs: ["*.py"]
+    pattern: '(?i)(hashlib\.md5|hashes\.MD5\(\)|Crypto\.Hash\.MD5)'
+    classification: "legacy-broken"
+    algorithm: "MD5"
+    severity: "critical"
+    recommendation: "Replace MD5 with SHA-256 or SHA-3"
+
+  - id: "py-sha1-broken"
+    name: "Python SHA-1 Broken Hash"
+    description: "Detects usage of collision-vulnerable SHA-1 in Python"
+    languages: ["python"]
+    file_globs: ["*.py"]
+    pattern: '(?i)(hashlib\.sha1|hashes\.SHA1\(\)|Crypto\.Hash\.SHA1)'
+    classification: "legacy-broken"
+    algorithm: "SHA-1"
+    severity: "high"
+    recommendation: "Upgrade SHA-1 to SHA-256 or SHA-512"
+
+  - id: "py-des-broken"
+    name: "Python DES/3DES Broken Cipher"
+    description: "Detects usage of deprecated DES or TripleDES ciphers in Python"
+    languages: ["python"]
+    file_globs: ["*.py"]
+    pattern: '(?i)(algorithms\.TripleDES|Crypto\.Cipher\.DES|Crypto\.Cipher\.DES3)'
+    classification: "legacy-broken"
+    algorithm: "3DES"
+    severity: "critical"
+    recommendation: "Replace DES/3DES with AES-256-GCM"
+
+  - id: "py-rc4-broken"
+    name: "Python RC4 / ARC4 Broken Cipher"
+    description: "Detects usage of broken RC4 stream cipher in Python"
+    languages: ["python"]
+    file_globs: ["*.py"]
+    pattern: '(?i)(algorithms\.ARC4|Crypto\.Cipher\.ARC4)'
+    classification: "legacy-broken"
+    algorithm: "RC4"
+    severity: "critical"
+    recommendation: "Cease RC4 usage; migrate to AES-256-GCM"
+
+  - id: "py-aes-safer"
+    name: "Python AES Symmetric Cipher"
+    description: "Detects AES symmetric cipher usage in Python"
+    languages: ["python"]
+    file_globs: ["*.py"]
+    pattern: '(?i)(algorithms\.AES|Crypto\.Cipher\.AES)'
+    classification: "quantum-safer-candidate"
+    algorithm: "AES"
+    severity: "info"
+    recommendation: "Ensure key size is 256 bits for Grover-resistant symmetric security"

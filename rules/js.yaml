@@ -1,0 +1,77 @@
+rules:
+  - id: "js-rsa-usage"
+    name: "JavaScript/TypeScript RSA Usage"
+    description: "Detects RSA key generation or RSA algorithm in WebCrypto / Node.js crypto"
+    languages: ["javascript"]
+    file_globs: ["*.js", "*.ts", "*.jsx", "*.tsx", "*.mjs"]
+    pattern: '(?i)(generateKeyPair\s*\(\s*["'']rsa["'']|name:\s*["'']RSASSA-PKCS1-v1_5["'']|name:\s*["'']RSA-PSS["'']|name:\s*["'']RSA-OAEP["''])'
+    classification: "quantum-vulnerable"
+    algorithm: "RSA"
+    severity: "high"
+    recommendation: "Plan migration from RSA to post-quantum signature algorithms (ML-DSA)"
+
+  - id: "js-ec-usage"
+    name: "JavaScript/TypeScript ECDSA / ECDH Usage"
+    description: "Detects elliptic curve algorithms in WebCrypto / Node crypto"
+    languages: ["javascript"]
+    file_globs: ["*.js", "*.ts", "*.jsx", "*.tsx", "*.mjs"]
+    pattern: '(?i)(generateKeyPair\s*\(\s*["'']ec["'']|name:\s*["'']ECDSA["'']|name:\s*["'']ECDH["'']|namedCurve:\s*["'']P-256["''])'
+    classification: "quantum-vulnerable"
+    algorithm: "ECDSA"
+    severity: "high"
+    recommendation: "Plan migration to NIST post-quantum standards"
+
+  - id: "js-md5-broken"
+    name: "JavaScript/TypeScript MD5 Broken Hash"
+    description: "Detects usage of MD5 hash in Node.js crypto"
+    languages: ["javascript"]
+    file_globs: ["*.js", "*.ts", "*.jsx", "*.tsx", "*.mjs"]
+    pattern: '(?i)createHash\s*\(\s*["'']md5["'']'
+    classification: "legacy-broken"
+    algorithm: "MD5"
+    severity: "critical"
+    recommendation: "Replace MD5 with SHA-256 or SHA-3"
+
+  - id: "js-sha1-broken"
+    name: "JavaScript/TypeScript SHA-1 Broken Hash"
+    description: "Detects usage of SHA-1 hash in Node.js crypto"
+    languages: ["javascript"]
+    file_globs: ["*.js", "*.ts", "*.jsx", "*.tsx", "*.mjs"]
+    pattern: '(?i)createHash\s*\(\s*["'']sha1["'']'
+    classification: "legacy-broken"
+    algorithm: "SHA-1"
+    severity: "high"
+    recommendation: "Upgrade SHA-1 to SHA-256 or SHA-512"
+
+  - id: "js-des-broken"
+    name: "JavaScript/TypeScript DES/3DES Broken Cipher"
+    description: "Detects usage of DES or 3DES ciphers in Node.js crypto"
+    languages: ["javascript"]
+    file_globs: ["*.js", "*.ts", "*.jsx", "*.tsx", "*.mjs"]
+    pattern: '(?i)createCipher(?:iv)?\s*\(\s*["''](des|des-ede3|des-ede|des-cbc)'
+    classification: "legacy-broken"
+    algorithm: "DES/3DES"
+    severity: "critical"
+    recommendation: "Replace DES with AES-256-GCM"
+
+  - id: "js-rc4-broken"
+    name: "JavaScript/TypeScript RC4 Broken Cipher"
+    description: "Detects usage of RC4 stream cipher in Node.js crypto"
+    languages: ["javascript"]
+    file_globs: ["*.js", "*.ts", "*.jsx", "*.tsx", "*.mjs"]
+    pattern: '(?i)createCipher(?:iv)?\s*\(\s*["''](rc4|arcfour)'
+    classification: "legacy-broken"
+    algorithm: "RC4"
+    severity: "critical"
+    recommendation: "Cease RC4 usage; migrate to AES-256-GCM"
+
+  - id: "js-aes-safer"
+    name: "JavaScript/TypeScript AES Cipher"
+    description: "Detects AES symmetric cipher usage in WebCrypto or Node.js crypto"
+    languages: ["javascript"]
+    file_globs: ["*.js", "*.ts", "*.jsx", "*.tsx", "*.mjs"]
+    pattern: '(?i)(createCipher(?:iv)?\s*\(\s*["'']aes-256|name:\s*["'']AES-GCM["''])'
+    classification: "quantum-safer-candidate"
+    algorithm: "AES"
+    severity: "info"
+    recommendation: "Ensure 256-bit key size is used for quantum-safe symmetric security"

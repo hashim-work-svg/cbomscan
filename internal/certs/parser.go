@@ -68,7 +68,15 @@ func ParseCertificateBytes(data []byte, filePath string) ([]CertificateAnalysis,
 
 // analyzeSingleCertificate inspects key parameters, algorithms, and evaluates post-quantum risk.
 func analyzeSingleCertificate(cert *x509.Certificate, filePath string, now time.Time) CertificateAnalysis {
-	daysUntilExpiry := int(cert.NotAfter.Sub(now).Hours() / 24)
+	var daysUntilExpiry int
+	if now.After(cert.NotAfter) {
+		daysUntilExpiry = -int((now.Sub(cert.NotAfter) + 12*time.Hour) / (24 * time.Hour))
+		if daysUntilExpiry == 0 {
+			daysUntilExpiry = -1
+		}
+	} else {
+		daysUntilExpiry = int((cert.NotAfter.Sub(now) + 12*time.Hour) / (24 * time.Hour))
+	}
 	isExpired := now.After(cert.NotAfter)
 
 	analysis := CertificateAnalysis{
@@ -116,8 +124,7 @@ func analyzeSingleCertificate(cert *x509.Certificate, filePath string, now time.
 		analysis.Recommendation = "Plan transition to stateful hash-based or lattice-based PQC signatures"
 
 	default:
-		keyTypeStr := fmt.Sprintf("%T", cert.PublicKey)
-		if strings.Contains(keyTypeStr, "dsa.PublicKey") {
+		if cert.PublicKeyAlgorithm == x509.DSA || strings.Contains(fmt.Sprintf("%T", cert.PublicKey), "dsa.PublicKey") {
 			analysis.KeyType = "DSA"
 			analysis.Classification = rules.RiskLegacyBroken
 			analysis.RiskReasons = append(analysis.RiskReasons, "Digital Signature Algorithm (DSA) is deprecated and legacy broken")
