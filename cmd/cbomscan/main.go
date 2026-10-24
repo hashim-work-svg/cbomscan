@@ -179,7 +179,9 @@ quantum-safer-candidate), calculate migration priority scores, and export Cyclon
 				if err != nil {
 					return fmt.Errorf("failed to generate CSV: %w", err)
 				}
-				outWriter.Write(csvBytes)
+				if _, err := outWriter.Write(csvBytes); err != nil {
+					return fmt.Errorf("failed to write CSV: %w", err)
+				}
 
 			default:
 				displayTable(scoredFindings, scoredCerts, outWriter)
