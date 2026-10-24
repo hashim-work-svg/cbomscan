@@ -1,0 +1,88 @@
+rules:
+  - id: "go-rsa-usage"
+    name: "Go RSA Cryptography Usage"
+    description: "Detects import or usage of crypto/rsa in Go code"
+    languages: ["go"]
+    file_globs: ["*.go"]
+    pattern: '("crypto/rsa"|rsa\.GenerateKey|rsa\.EncryptPKCS1v15|rsa\.SignPKCS1v15|rsa\.SignPSS)'
+    classification: "quantum-vulnerable"
+    algorithm: "RSA"
+    severity: "high"
+    recommendation: "Plan migration from RSA to post-quantum signature (ML-DSA) or key-encapsulation (ML-KEM)"
+
+  - id: "go-ecdsa-usage"
+    name: "Go ECDSA / ECC Usage"
+    description: "Detects usage of crypto/ecdsa or elliptic curves in Go"
+    languages: ["go"]
+    file_globs: ["*.go"]
+    pattern: '("crypto/ecdsa"|ecdsa\.GenerateKey|elliptic\.P256|elliptic\.P384|elliptic\.P521)'
+    classification: "quantum-vulnerable"
+    algorithm: "ECDSA"
+    severity: "high"
+    recommendation: "Plan migration to NIST post-quantum standards (ML-DSA FIPS 204)"
+
+  - id: "go-md5-broken"
+    name: "Go MD5 Legacy Hash"
+    description: "Detects usage of cryptographically broken MD5 hash"
+    languages: ["go"]
+    file_globs: ["*.go"]
+    pattern: '("crypto/md5"|md5\.New|md5\.Sum)'
+    classification: "legacy-broken"
+    algorithm: "MD5"
+    severity: "critical"
+    recommendation: "Replace MD5 immediately with SHA-256 or SHA-3"
+
+  - id: "go-sha1-broken"
+    name: "Go SHA-1 Legacy Hash"
+    description: "Detects usage of collision-vulnerable SHA-1 hash"
+    languages: ["go"]
+    file_globs: ["*.go"]
+    pattern: '("crypto/sha1"|sha1\.New|sha1\.Sum)'
+    classification: "legacy-broken"
+    algorithm: "SHA-1"
+    severity: "high"
+    recommendation: "Upgrade SHA-1 to SHA-256, SHA-384, or SHA-512"
+
+  - id: "go-des-broken"
+    name: "Go DES/3DES Legacy Cipher"
+    description: "Detects usage of deprecated DES or TripleDES ciphers"
+    languages: ["go"]
+    file_globs: ["*.go"]
+    pattern: '("crypto/des"|des\.NewCipher|des\.NewTripleDESCipher)'
+    classification: "legacy-broken"
+    algorithm: "DES"
+    severity: "critical"
+    recommendation: "Replace DES with AES-256-GCM or ChaCha20-Poly1305"
+
+  - id: "go-rc4-broken"
+    name: "Go RC4 Stream Cipher"
+    description: "Detects usage of cryptographically broken RC4 stream cipher"
+    languages: ["go"]
+    file_globs: ["*.go"]
+    pattern: '("crypto/rc4"|rc4\.NewCipher)'
+    classification: "legacy-broken"
+    algorithm: "RC4"
+    severity: "critical"
+    recommendation: "Cease all RC4 usage; migrate to AES-GCM"
+
+  - id: "go-aes256-safer"
+    name: "Go AES Symmetric Cipher"
+    description: "Detects AES symmetric cipher usage"
+    languages: ["go"]
+    file_globs: ["*.go"]
+    pattern: '("crypto/aes"|aes\.NewCipher)'
+    classification: "quantum-safer-candidate"
+    algorithm: "AES"
+    severity: "info"
+    recommendation: "Ensure key length is 256 bits for full post-quantum security (Grover's algorithm resistance)"
+
+  - id: "go-sha256-safer"
+    name: "Go SHA-256 Hash"
+    description: "Detects SHA-256 quantum-resistant cryptographic hash usage"
+    languages: ["go"]
+    file_globs: ["*.go"]
+    pattern: '("crypto/sha256"|sha256\.New|sha256\.Sum256)'
+    classification: "quantum-safer-candidate"
+    algorithm: "SHA-256"
+    severity: "info"
+    recommendation: "SHA-256 provides solid post-quantum collision resistance"

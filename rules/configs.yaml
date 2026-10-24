@@ -1,0 +1,22 @@
+rules:
+  - id: "cfg-sslv3-broken"
+    name: "Weak Protocol SSLv3 / TLSv1.0 / TLSv1.1"
+    description: "Detects deprecated and broken SSL/TLS protocols in server configurations"
+    languages: ["configs"]
+    file_globs: ["*.conf", "*.cfg", "sshd_config", "nginx.conf"]
+    pattern: '(?i)(ssl_protocols\s+.*\b(SSLv2|SSLv3|TLSv1|TLSv1\.1)\b|Protocols\s+.*\b(TLSv1|TLSv1\.1)\b)'
+    classification: "legacy-broken"
+    algorithm: "TLSv1.0/TLSv1.1"
+    severity: "critical"
+    recommendation: "Enforce TLSv1.2 and TLSv1.3 exclusively"
+
+  - id: "cfg-weak-cipher"
+    name: "Weak Legacy Cipher Suites in Config"
+    description: "Detects RC4, 3DES, or NULL cipher suites in configuration files"
+    languages: ["configs"]
+    file_globs: ["*.conf", "*.cfg", "sshd_config", "nginx.conf"]
+    pattern: '(?i)\b(RC4-SHA|DES-CBC3-SHA|EDH-RSA-DES-CBC3-SHA|NULL-SHA)\b'
+    classification: "legacy-broken"
+    algorithm: "RC4/3DES"
+    severity: "critical"
+    recommendation: "Remove deprecated 3DES and RC4 ciphers from server cipher suites"

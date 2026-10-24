@@ -1,0 +1,22 @@
+# Binaries and outputs
+bin/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test coverage and artifacts
+coverage.out
+*.test
+
+# CBOM outputs
+*.cbom.json
+findings.csv
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
